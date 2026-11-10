@@ -1,0 +1,57 @@
+
+name: Build Demo APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Find and Extract ZIP
+        run: |
+          python3 - <<'PY'
+          import os, zipfile
+          os.makedirs("source", exist_ok=True)
+          found = False
+          for root, dirs, files in os.walk("."):
+              dirs[:] = [d for d in dirs if d != ".git"]
+              for name in files:
+                  path = os.path.join(root, name)
+                  if zipfile.is_zipfile(path):
+                      print("ZIP found:", path)
+                      with zipfile.ZipFile(path) as z:
+                          z.extractall("source")
+                      found = True
+                      break
+              if found:
+                  break
+          if not found:
+              raise SystemExit("ERROR: Repository me ZIP file nahi mili")
+          PY
+
+      - name: Build APK
+        run: |
+          FILE=$(find source -name settings.gradle.kts -print -quit)
+          if [ -z "$FILE" ]; then
+            echo "ERROR: Android project nahi mila"
+            exit 1
+          fi
+          cd "$(dirname "$FILE")"
+          gradle :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hamari-Chit-Fund-Demo-APK
+          path: source/**/app/build/outputs/apk/debug/app-debug.apk
