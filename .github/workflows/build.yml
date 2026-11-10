@@ -1,0 +1,40 @@
+
+name: Build Demo APK
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '**.zip'
+      - '.github/workflows/build.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Extract project ZIP
+        run: |
+          mkdir source
+          unzip -o *.zip -d source
+          find source -name settings.gradle.kts
+
+      - name: Build APK
+        run: |
+          PROJECT=$(dirname "$(find source -name settings.gradle.kts | head -1)")
+          cd "$PROJECT"
+          gradle :app:assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Hamari-Chit-Fund-Demo-APK
+          path: source/**/app/build/outputs/apk/debug/app-debug.apk
