@@ -32,7 +32,7 @@ class _ChitFundAppState extends State<ChitFundApp> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.green,
-        scaffoldBackgroundColor: const Color(f7f9fa),
+        scaffoldBackgroundColor: const (0xFFf7f9fa),
         appBarTheme: const AppBarTheme(
           backgroundColor: Color(0xFF1b4332),
           foregroundColor: Colors.white,
