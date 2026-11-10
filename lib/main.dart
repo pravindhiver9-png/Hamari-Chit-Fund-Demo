@@ -1,170 +1,235 @@
 import 'package:flutter/material.dart';
-import 'screens.dart';
-import 'udhar_screen.dart';
-import 'dashboard_screen.dart';
+import 'package:intl/intl.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 void main() {
   runApp(const ChitFundApp());
 }
 
-class ChitFundApp extends StatefulWidget {
+class ChitFundApp extends StatelessWidget {
   const ChitFundApp({super.key});
-
-  @override
-  State<ChitFundApp> createState() => _ChitFundAppState();
-}
-
-class _ChitFundAppState extends State<ChitFundApp> {
-  Locale _locale = const Locale('hi', '');
-
-  void _toggleLanguage() {
-    setState(() {
-      if (_locale.languageCode == 'hi') {
-        _locale = const Locale('en', '');
-      } else {
-        _locale = const Locale('hi', '');
-      }
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Hamari Chit Fund Family 2.0',
       debugShowCheckedModeBanner: false,
-      locale: _locale,
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFf7f9fa),
       ),
-      home: HomeScreen(onToggleLanguage: _toggleLanguage, currentLocale: _locale),
+      home: const MembersScreen(),
     );
   }
 }
 
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key, required this.onToggleLanguage, required this.currentLocale});
-  
-  final VoidCallback onToggleLanguage;
-  final Locale currentLocale;
+class MembersScreen extends StatefulWidget {
+  const MembersScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    bool isHindi = currentLocale.languageCode == 'hi';
+  State<MembersScreen> createState() => _MembersScreenState();
+}
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(isHindi ? 'हमारी चिट फंड फैमिली 2.0' : 'Hamari Chit Fund Family 2.0'),
-        backgroundColor: const Color(0xFF1b4332),
-        foregroundColor: Colors.white,
-        actions: [
-          TextButton.icon(
-            onPressed: onToggleLanguage,
-            icon: const Icon(Icons.language, color: Colors.white),
-            label: Text(
-              isHindi ? 'English' : 'हिंदी',
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1b4332),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  isHindi ? 'विश्वास • सहयोग • समृद्धि' : 'Trust • Support • Prosperity',
-                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+class _MembersScreenState extends State<MembersScreen> {
+  final List<String> _members = [
+    'Yamuna Verma',
+    'Basanti Verma',
+    'Pushpa Verma',
+    'Dharmendra Verma',
+    'Yashoda Mandavi',
+    'Pravin Dhiver',
+  ];
+
+  final List<String> _months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  // Member par click karne par jama pop-up kholna
+  void _openJamaDialog(String memberName) {
+    List<String> selectedMonths = [];
+    double amountPerMonth = 200;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: Text('$memberName - Jama Entry'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    const Text('Mahine select karein:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ..._months.map((month) {
+                      bool isSelected = selectedMonths.contains(month);
+                      return CheckboxListTile(
+                        title: Text('$month (₹$amountPerMonth)'),
+                        value: isSelected,
+                        activeColor: const Color(0xFF1b4332),
+                        onChanged: (bool? value) {
+                          setStateDialog(() {
+                            if (value == true) {
+                              selectedMonths.add(month);
+                            } else {
+                              selectedMonths.remove(month);
+                            }
+                          });
+                        },
+                      );
+                    }),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  isHindi ? 'डैशबोर्ड और लेज़र सिस्टम' : 'Dashboard & Ledger System',
-                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Radd Karein'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1b4332), foregroundColor: Colors.white),
+                  onPressed: () {
+                    if (selectedMonths.isNotEmpty) {
+                      Navigator.pop(context);
+                      double totalAmount = selectedMonths.length * amountPerMonth;
+                      String currentDate = DateFormat('dd/MM/yyyy').format(DateTime.now());
+                      
+                      String msg = "Dinank $currentDate\n\n$memberName ₹$totalAmount jama (${selectedMonths.join(', ')} ka kul hisaab)";
+                      _sendToWhatsApp(msg);
+                    }
+                  },
+                  child: const Text('Jama Karein & WhatsApp Bhejein'),
                 ),
               ],
-            ),
-          ),
-          const SizedBox(height: 20),
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            children: [
-              _buildMenuCard(
-                context,
-                isHindi ? 'सदस्य सूची' : 'Member List',
-                Icons.group,
-                Colors.blue,
-                () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MembersScreen()));
-                },
-              ),
-              _buildMenuCard(
-                context,
-                isHindi ? 'मासिक जमा' : 'Monthly Jama',
-                Icons.check_circle,
-                Colors.green,
-                () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
-                },
-              ),
-              _buildMenuCard(
-                context,
-                isHindi ? 'उधार प्रबंधन' : 'Udhar Management',
-                Icons.account_balance_wallet,
-                Colors.orange,
-                () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const UdharScreen()));
-                },
-              ),
-              _buildMenuCard(
-                context,
-                isHindi ? 'खर्च और अतिरिक्त' : 'Kharch & Atirikt',
-                Icons.receipt_long,
-                Colors.brown,
-                () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
-                },
-              ),
-            ],
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Card(
-        elevation: 2,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+  // Professional PDF Report Generate Karne Ka Function
+  Future<void> _generateAndSharePdf(String memberName) async {
+    final pdf = pw.Document();
+
+    pdf.addPage(
+      pw.Page(
+        pageFormat: PdfPageFormat.a4,
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
-              Icon(icon, size: 40, color: color),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              pw.Container(
+                alignment: pw.Alignment.center,
+                padding: const pw.EdgeInsets.all(10),
+                decoration: pw.BoxDecoration(
+                  color: PdfColors.green900,
+                  borderRadius: pw.BorderRadius.circular(8),
+                ),
+                child: pw.Text(
+                  'HAMARI CHIT FUND FAMILY 2.0',
+                  style: pw.TextStyle(color: PdfColors.white, fontSize: 18, fontWeight: pw.FontWeight.bold),
+                ),
+              ),
+              pw.SizedBox(height: 20),
+              pw.Text('Sadasya Report: $memberName', style: pw.TextStyle(fontSize: 16, fontWeight: pw.FontWeight.bold)),
+              pw.Text('Jari karne ki tithi: ${DateFormat('dd/MM/yyyy').format(DateTime.now())}', style: const pw.TextStyle(fontSize: 12, color: PdfColors.grey700)),
+              pw.SizedBox(height: 20),
+              
+              pw.Table.fromTextArray(
+                headers: ['Mahina', 'Niyamit Rashiyan', 'Status'],
+                data: _months.map((m) => [m, '₹200', 'Jama / Surakshit']).toList(),
+                headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.green750),
+                rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
+                cellAlignment: pw.Alignment.centerLeft,
+              ),
+              
+              pw.SizedBox(height: 30),
+              pw.Divider(),
+              pw.Spacer(),
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Text('Designed & Developed by: Pravin Chandra Dhiver', style: const pw.TextStyle(fontSize: 10, color: PdfColors.grey600)),
+                  pw.Text('Vishwas • Sahyog • Samridhi', style: pw.TextStyle(fontSize: 10, fontWeight: pw.FontWeight.bold, color: PdfColors.green900)),
+                ],
               ),
             ],
+          );
+        },
+      ),
+    );
+
+    await Printing.sharePdf(bytes: await pdf.save(), filename: '${memberName}_chit_fund_report.pdf');
+  }
+
+  void _sendToWhatsApp(String message) async {
+    final encodedMessage = Uri.encodeComponent(message);
+    final url = Uri.parse("https://wa.me/?text=$encodedMessage");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Sadasya Suchi (Kul: ${_members.length})'),
+        backgroundColor: const Color(0xFF1b4332),
+        foregroundColor: Colors.white,
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView.builder(
+              itemCount: _members.length,
+              itemBuilder: (context, index) {
+                final member = _members[index];
+                return Card(
+                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: const Color(0xFF1b4332),
+                      foregroundColor: Colors.white,
+                      child: Text('${index + 1}'),
+                    ),
+                    title: Text(member, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: const Text('Tap to Jama or Export PDF'),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.picture_as_pdf, color: Colors.red),
+                          onPressed: () => _generateAndSharePdf(member),
+                          tooltip: 'PDF Report Share Karein',
+                        ),
+                        const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
+                      ],
+                    ),
+                    onTap: () => _openJamaDialog(member),
+                  ),
+                );
+              },
+            ),
           ),
-        ),
+          // Developer Name Footer at bottom of Home Screen
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Text(
+              'Designed & Developed by: Pravin Chandra Dhiver',
+              style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500),
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
       ),
     );
   }
