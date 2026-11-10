@@ -146,7 +146,7 @@ class _MembersScreenState extends State<MembersScreen> {
                 headers: ['Mahina', 'Niyamit Rashiyan', 'Status'],
                 data: _months.map((m) => [m, '₹200', 'Jama / Surakshit']).toList(),
                 headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: PdfColors.white),
-                headerDecoration: const pw.BoxDecoration(color: PdfColors.green750),
+                headerDecoration: const pw.BoxDecoration(color: PdfColors.green700),
                 rowDecoration: const pw.BoxDecoration(border: pw.Border(bottom: pw.BorderSide(color: PdfColors.grey300))),
                 cellAlignment: pw.Alignment.centerLeft,
               ),
@@ -220,7 +220,6 @@ class _MembersScreenState extends State<MembersScreen> {
               },
             ),
           ),
-          // Developer Name Footer at bottom of Home Screen
           const Padding(
             padding: EdgeInsets.all(16.0),
             child: Text(
