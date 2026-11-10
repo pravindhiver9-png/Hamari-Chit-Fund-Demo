@@ -1,0 +1,28 @@
+name: hamari_chit_fund_family
+description: "Hamari Chit Fund Family 2.0 - Bilingual Chit Fund & Loan Management System"
+publish_to: 'none'
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: ^0.19.0
+  shared_preferences: ^2.2.2
+  pdf: ^3.10.7
+  printing: ^5.11.1
+  path_provider: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/
