@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'screens.dart';
+import 'udhar_screen.dart';
+import 'dashboard_screen.dart';
 
 void main() {
   runApp(const ChitFundApp());
@@ -13,14 +15,14 @@ class ChitFundApp extends StatefulWidget {
 }
 
 class _ChitFundAppState extends State<ChitFundApp> {
-  Locale _locale = const Locale('hi'); // Default language Hindi
+  Locale _locale = const Locale('hi', '');
 
   void _toggleLanguage() {
     setState(() {
       if (_locale.languageCode == 'hi') {
-        _locale = const Locale('en');
+        _locale = const Locale('en', '');
       } else {
-        _locale = const Locale('hi');
+        _locale = const Locale('hi', '');
       }
     });
   }
@@ -30,33 +32,31 @@ class _ChitFundAppState extends State<ChitFundApp> {
     return MaterialApp(
       title: 'Hamari Chit Fund Family 2.0',
       debugShowCheckedModeBanner: false,
+      locale: _locale,
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: const Color(0xFFf7f9fa),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF1b4332),
-          foregroundColor: Colors.white,
-        ),
       ),
-      locale: _locale,
-      home: HomeScreen(onToggleLanguage: _toggleLanguage, currentLang: _locale.languageCode),
+      home: HomeScreen(onToggleLanguage: _toggleLanguage, currentLocale: _locale),
     );
   }
 }
 
 class HomeScreen extends StatelessWidget {
+  const HomeScreen({super.key, required this.onToggleLanguage, required this.currentLocale});
+  
   final VoidCallback onToggleLanguage;
-  final String currentLang;
-
-  const HomeScreen({super.key, required this.onToggleLanguage, required this.currentLang});
+  final Locale currentLocale;
 
   @override
   Widget build(BuildContext context) {
-    bool isHindi = currentLang == 'hi';
-    
+    bool isHindi = currentLocale.languageCode == 'hi';
+
     return Scaffold(
       appBar: AppBar(
         title: Text(isHindi ? 'हमारी चिट फंड फैमिली 2.0' : 'Hamari Chit Fund Family 2.0'),
+        backgroundColor: const Color(0xFF1b4332),
+        foregroundColor: Colors.white,
         actions: [
           TextButton.icon(
             onPressed: onToggleLanguage,
@@ -68,76 +68,99 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: Padding(
+      body: ListView(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1b4332), Color(0xFF2d6a4f)],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    isHindi ? 'विश्वास • सहयोग • समृद्धि' : 'Vishwas • Sahyog • Samriddhi',
-                    style: const TextStyle(color: Color(0xFFd8f3dc), fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    isHindi ? 'डैशबोर्ड और लेज़र सिस्टम' : 'Dashboard & Ledger System',
-                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: const Color(0xFF1b4332),
+              borderRadius: BorderRadius.circular(12),
             ),
-            const SizedBox(height: 20),
-            // Quick Modules Grid / Buttons
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildMenuCard(context, isHindi ? 'स सदस्य सूची' : 'Member List', Icons.people, Colors.teal),
-                _buildMenuCard(context, isHindi ? 'मासिक जमा' : 'Monthly Jama', Icons.check_circle, Colors.green),
-                _buildMenuCard(context, isHindi ? 'उधार प्रबंधन' : 'Loan (Udhar)', Icons.account_balance_wallet, Colors.orange),
-                _buildMenuCard(context, isHindi ? 'खर्च और अतिरिक्त' : 'Expenses & Extra', Icons.receipt_long, Colors.brown),
+                Text(
+                  isHindi ? 'विश्वास • सहयोग • समृद्धि' : 'Trust • Support • Prosperity',
+                  style: const TextStyle(color: Colors.white70, fontSize: 14),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  isHindi ? 'डैशबोर्ड और लेज़र सिस्टम' : 'Dashboard & Ledger System',
+                  style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            children: [
+              _buildMenuCard(
+                context,
+                isHindi ? 'सदस्य सूची' : 'Member List',
+                Icons.group,
+                Colors.blue,
+                () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const MembersScreen()));
+                },
+              ),
+              _buildMenuCard(
+                context,
+                isHindi ? 'मासिक जमा' : 'Monthly Jama',
+                Icons.check_circle,
+                Colors.green,
+                () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+                },
+              ),
+              _buildMenuCard(
+                context,
+                isHindi ? 'उधार प्रबंधन' : 'Udhar Management',
+                Icons.account_balance_wallet,
+                Colors.orange,
+                () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const UdharScreen()));
+                },
+              ),
+              _buildMenuCard(
+                context,
+                isHindi ? 'खर्च और अतिरिक्त' : 'Kharch & Atirikt',
+                Icons.receipt_long,
+                Colors.brown,
+                () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const DashboardScreen()));
+                },
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color) {
-    return Card(
-      elevation: 3,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: InkWell(
-        onTap: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$title par click hua!')),
-          );
-        },
-        borderRadius: BorderRadius.circular(10),
+  Widget _buildMenuCard(BuildContext context, String title, IconData icon, Color color, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Card(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(icon, size: 40, color: color),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               Text(
                 title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
